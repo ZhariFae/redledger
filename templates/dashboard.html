@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Cardinal Log</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-content">
+            <div class="mapua-spinner"></div>
+            <div class="loader-text">Loading Analytics...</div>
+        </div>
+    </div>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="bi bi-building-fill"></i></div>
+            <div class="brand-title">Cardinal Admin</div>
+            <div class="brand-subtitle">Mapúa University</div>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" onclick="switchTab('summary')" id="nav-summary">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Summary Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchTab('detailed')" id="nav-detailed">
+                    <i class="bi bi-table"></i>
+                    <span>Detailed Logs</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+             <a href="/logout" class="btn btn-logout">
+                <i class="bi bi-box-arrow-left me-2"></i> Sign Out
+             </a>
+             <div class="text-center mt-3 text-muted small" style="opacity: 0.3; font-size: 0.7rem;">
+                 &copy; 2026 Cardinal Log
+             </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4 main-content">
+        
+        <div class="card p-3 mb-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="m-0 text-mapua fw-bold" id="pageTitle">
+                    <i class="bi bi-grid-1x2-fill me-2"></i>Summary
+                </h4>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-calendar3 me-1"></i> {{ current_file }}
+                </span>
+            </div>
+            
+            <form action="/dashboard" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="text-uppercase fw-bold text-muted input-group-label">Year</label>
+                    <select name="year" class="form-select input-modern" onchange="this.form.submit()">
+                        <option value="2025" {% if selected_year == '2025' %}selected{% endif %}>2025</option>
+                        <option value="2026" {% if selected_year == '2026' %}selected{% endif %}>2026</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-uppercase fw-bold text-muted input-group-label">Month File</label>
+                    <select name="month_file" class="form-select input-modern" onchange="this.form.submit()">
+                        {% for file in files %}
+                            <option value="{{ file }}" {% if file == current_file %}selected{% endif %}>{{ file }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="text-uppercase fw-bold text-muted input-group-label">Day Filter</label>
+                    <select name="filter_day" class="form-select input-modern">
+                        <option value="">All Days</option> 
+                        {% for i in range(1, 32) %}
+                            {% set day_str = "%02d" % i %} 
+                            <option value="{{ day_str }}" {% if filter_day == day_str %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="text-uppercase fw-bold text-muted input-group-label">Hour Filter</label>
+                    <select name="filter_hour" class="form-select input-modern">
+                        <option value="">All Hours</option>
+                        {% for i in range(7, 21) %}
+                            {% set hour = "%02d" % i %}
+                            <option value="{{ hour }}" {% if filter_hour == hour %}selected{% endif %}>{{ hour }}:00 - {{ hour }}:59</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-modern flex-grow-1 fw-bold">
+                        <i class="bi bi-funnel-fill me-2"></i> Apply
+                    </button>
+                    <a href="/dashboard" class="btn btn-outline-secondary btn-modern" title="Reset Filters" style="width: 50px;">
+                        <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                    </a>
+                    <a href="/download_report?file={{ current_file }}" class="btn btn-success btn-modern flex-grow-1 fw-bold">
+                        <i class="bi bi-file-earmark-excel-fill me-2"></i> Export
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div id="tab-summary" class="tab-content active">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid var(--mapua-red);">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Total Visitors</p><h2 id="live-total" class="fw-bold text-mapua mb-0">{{ total_visitors }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-people-fill text-mapua fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted"><i class="bi bi-arrow-up-right text-success"></i> <span id="live-avg" class="fw-bold">{{ avg_daily }}</span> avg. per day</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid var(--mapua-gold);">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Top Program</p><h2 id="live-dept" class="fw-bold text-warning mb-0">{{ top_dept }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-trophy-fill text-warning fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Most active group</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid #212529;">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Peak Hour</p><h2 id="live-peak" class="fw-bold text-dark mb-0">{{ peak_hour }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-clock-fill text-dark fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Busiest time of day</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid #198754;">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Busiest Day</p><h4 id="live-day" class="fw-bold text-success mb-0">{{ busiest_day }}</h4></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-calendar-check-fill text-success fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Highest traffic recorded</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-mapua fw-bold text-uppercase m-0"><i class="bi bi-bar-chart-line-fill me-2"></i>Traffic Volume</h6>
+                            <small class="text-muted">By Hour</small>
+                        </div>
+                        <div style="height: 300px; width: 100%;"><canvas id="timeChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-mapua fw-bold text-uppercase m-0"><i class="bi bi-pie-chart-fill me-2"></i>Program Distribution</h6>
+                            <small class="text-muted">Demographics</small>
+                        </div>
+                        <div style="height: 300px; width: 100%;"><canvas id="deptChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100 p-4">
+                        <h6 class="text-mapua fw-bold text-uppercase mb-4">Visitor Composition</h6>
+                        <div style="height: 250px; width: 100%; position: relative;"><canvas id="compChart"></canvas></div>
+                        <div class="mt-4 text-center">
+                            <span class="badge bg-danger me-2">Students: <span id="live-students">{{ student_count }}</span></span>
+                            <span class="badge bg-secondary">Guests: <span id="live-guests">{{ guest_count }}</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="text-mapua fw-bold text-uppercase m-0">Recent Activity</h6>
+                                <span class="badge bg-light text-dark border">Last 5 Logins</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="small text-uppercase text-muted">Time</th>
+                                        <th class="small text-uppercase text-muted">Name</th>
+                                        <th class="small text-uppercase text-muted">Type</th>
+                                        <th class="small text-uppercase text-muted">Program/Agency</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-recent-table">
+                                    {% for row in recent_logs %}
+                                    <tr>
+                                        <td class="fw-bold text-dark">{{ row['Time_In'] }}</td>
+                                        <td>{{ row['Last_Name'] }}, {{ row['First_Name'] }}</td>
+                                        <td>
+                                            {% if row['Type'] == 'Student' %}<span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">STUDENT</span>
+                                            {% else %}<span class="badge rounded-pill bg-secondary" style="font-size: 0.7rem;">GUEST</span>{% endif %}
+                                        </td>
+                                        <td class="small text-muted">{{ row['Program'] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="card-footer bg-light p-3">
+                            <small class="fw-bold text-uppercase text-muted">Full Program Breakdown:</small>
+                            <div id="live-breakdown" class="d-flex flex-wrap gap-2 mt-2">
+                                {% for dept, count in dept_breakdown.items() %}
+                                <span class="badge bg-white text-dark border shadow-sm">
+                                    {{ dept }} <span class="text-danger fw-bold ms-1">{{ count }}</span>
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-detailed" class="tab-content">
+            <div class="card p-4 shadow-sm border-0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-mapua fw-bold m-0"><i class="bi bi-list-columns-reverse me-2"></i>Logs</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer-fill"></i> Print
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="logsTable" class="table table-hover align-middle small" style="width:100%">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Type</th>
+                                <th>Name</th>
+                                <th>ID Number</th>
+                                <th>Program</th>
+                                <th>Date Logged</th>
+                                <th>Time In</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data_rows %}
+                            <tr>
+                                <td>
+                                    {% if row['Type'] == 'Student' %}<span class="badge bg-danger">Student</span>
+                                    {% else %}<span class="badge bg-secondary">Guest</span>{% endif %}
+                                </td>
+                                <td class="fw-bold text-secondary">{{ row['Last_Name'] }}, {{ row['First_Name'] }}</td>
+                                <td>{{ row['ID_Number'] }}</td>
+                                <td>{{ row['Program'] }}</td>
+                                <td>{{ row['Date_Logged'] }}</td>
+                                <td>{{ row['Time_In'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        // --- GLOBAL VARIABLES (For Live Updates) ---
+        let chartDept, chartTime, chartComp;
+
+        // --- 1. Initialize & Hide Loader ---
+        $(document).ready(function() {
+            // DataTables Init
+            $('#logsTable').DataTable({
+                destroy: true,
+                responsive: true,
+                order: [[4, 'desc'], [5, 'desc']], 
+                language: { search: "", searchPlaceholder: "Search...", lengthMenu: "Show _MENU_" },
+                initComplete: function () { 
+                    $('.dataTables_filter input').addClass('form-control input-modern');
+                    $('.dataTables_length select').addClass('form-select input-modern');
+                }
+            });
+
+            // Hide Loader
+            setTimeout(function() {
+                const loader = document.getElementById('pageLoader');
+                if(loader) loader.classList.add('hidden');
+            }, 800); 
+        });
+
+        // --- 2. Chart Configuration ---
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+        Chart.defaults.color = '#6c757d';
+        
+        function getGradient(ctx, colorStart, colorEnd) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, colorStart);
+            gradient.addColorStop(1, colorEnd);
+            return gradient;
+        }
+        
+        const commonOptions = {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f8f9fa' } }, x: { grid: { display: false } } }
+        };
+
+        // Init Dept Chart
+        const ctxDept = document.getElementById('deptChart').getContext('2d');
+        chartDept = new Chart(ctxDept, {
+            type: 'bar',
+            data: {
+                labels: {{ dept_labels | safe }},
+                datasets: [{ 
+                    data: {{ dept_counts | safe }}, 
+                    backgroundColor: getGradient(ctxDept, '#9e1b32', '#d6334f'),
+                    borderRadius: 6, maxBarThickness: 50 
+                }]
+            }, options: commonOptions
+        });
+
+        // Init Time Chart
+        const ctxTime = document.getElementById('timeChart').getContext('2d');
+        chartTime = new Chart(ctxTime, {
+            type: 'line',
+            data: {
+                labels: {{ time_labels | safe }},
+                datasets: [{ 
+                    data: {{ time_counts | safe }}, 
+                    backgroundColor: getGradient(ctxTime, '#343a40', '#6c757d'),
+                    borderColor: '#343a40', borderWidth: 2, tension: 0.4, fill: false,
+                    pointBackgroundColor: '#ffffff', pointBorderWidth: 2
+                }]
+            }, options: commonOptions
+        });
+
+        // Init Comp Chart
+        const ctxComp = document.getElementById('compChart').getContext('2d');
+        chartComp = new Chart(ctxComp, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Guests'],
+                datasets: [{
+                    data: [{{ student_count }}, {{ guest_count }}],
+                    backgroundColor: ['#9e1b32', '#6c757d'],
+                    borderWidth: 0, hoverOffset: 4
+                }]
+            }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } }
+        });
+
+        // --- 3. Live Polling Logic ---
+        function updateDashboard() {
+            const params = new URLSearchParams(window.location.search);
+            fetch(`/api/updates?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update Text Stats
+                    document.getElementById('live-total').innerText = data.total_visitors;
+                    document.getElementById('live-avg').innerText = data.avg_daily;
+                    document.getElementById('live-dept').innerText = data.top_dept;
+                    document.getElementById('live-peak').innerText = data.peak_hour;
+                    document.getElementById('live-day').innerText = data.busiest_day;
+                    document.getElementById('live-students').innerText = data.student_count;
+                    document.getElementById('live-guests').innerText = data.guest_count;
+
+                    // Update Charts
+                    chartDept.data.labels = data.charts.dept_labels;
+                    chartDept.data.datasets[0].data = data.charts.dept_counts;
+                    chartDept.update('none');
+
+                    chartTime.data.labels = data.charts.time_labels;
+                    chartTime.data.datasets[0].data = data.charts.time_counts;
+                    chartTime.update('none');
+
+                    chartComp.data.datasets[0].data = [data.student_count, data.guest_count];
+                    chartComp.update('none');
+
+                    // Update Recent Table
+                    const tableBody = document.getElementById('live-recent-table');
+                    tableBody.innerHTML = ''; 
+                    data.recent_logs.forEach(row => {
+                        const badge = row.Type === 'Student' 
+                            ? '<span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">STUDENT</span>'
+                            : '<span class="badge rounded-pill bg-secondary" style="font-size: 0.7rem;">GUEST</span>';
+                        tableBody.insertAdjacentHTML('beforeend', `<tr><td class="fw-bold text-dark">${row.Time_In}</td><td>${row.Last_Name}, ${row.First_Name}</td><td>${badge}</td><td class="small text-muted">${row.Program}</td></tr>`);
+                    });
+
+                    // Update Breakdown Badges
+                    const breakdownContainer = document.getElementById('live-breakdown');
+                    if (breakdownContainer && data.dept_breakdown) {
+                        breakdownContainer.innerHTML = ''; // Clear
+                        for (const [dept, count] of Object.entries(data.dept_breakdown)) {
+                            const badgeHTML = `
+                                <span class="badge bg-white text-dark border shadow-sm">
+                                    ${dept} <span class="text-danger fw-bold ms-1">${count}</span>
+                                </span>`;
+                            breakdownContainer.insertAdjacentHTML('beforeend', badgeHTML);
+                        }
+                    }
+                })
+                .catch(err => console.error("Poll Error:", err));
+        }
+        setInterval(updateDashboard, 30000); // 30 sec poll
+
+        // --- 4. Tab Logic ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if(tabName === 'summary') document.getElementById('nav-summary').classList.add('active');
+            if(tabName === 'detailed') document.getElementById('nav-detailed').classList.add('active');
+            const titles = {'summary': 'Summary', 'detailed': 'Detailed Report'};
+            const icons = {'summary': 'bi-grid-1x2-fill', 'detailed': 'bi-table'};
+            document.getElementById('pageTitle').innerHTML = `<i class="bi ${icons[tabName]} me-2"></i>${titles[tabName]}`;
+        }
+
+        // --- 5. TomSelect ---
+        document.querySelectorAll('select.input-modern').forEach((el) => {
+            new TomSelect(el, { create: false, dropdownParent: 'body', render: { item: function(d,e){return '<div>'+e(d.text)+'</div>'}, option: function(d,e){return '<div>'+e(d.text)+'</div>'} } });
+        });
+    </script>
+</body>
+</html>
