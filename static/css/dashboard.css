@@ -1,0 +1,616 @@
+/* ==========================================================================
+   CARDINAL ADMIN DASHBOARD - MAIN STYLESHEET
+   Description: Custom theme for Mapúa University Admin Dashboard
+   ========================================================================== */
+
+/* ==========================================================================
+   1. THEME VARIABLES & GLOBAL RESET
+   ========================================================================== */
+:root {
+    /* --- Brand Colors --- */
+    --mapua-red:      #9e1b32;   /* Primary Cardinal Red */
+    --mapua-gold:     #c5a065;   /* Secondary Muted Gold */
+    --mapua-dark:     #212529;   /* Text Dark */
+    --mapua-charcoal: #343a40;   /* Sidebar Background */
+
+    /* --- UI Colors --- */
+    --text-color:     #333333;
+    --bg-light:       #f8f9fa;
+    --border-color:   #e9ecef;
+    --sidebar-width:  280px;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    background-color: var(--bg-light);
+    margin: 0;
+    min-height: 100vh;
+}
+
+
+/* ==========================================================================
+   2. LAYOUT STRUCTURE
+   ========================================================================== */
+
+/* --- Sidebar Navigation (Fixed Left) --- */
+.sidebar {
+    position: fixed;
+    top: 0; 
+    bottom: 0; 
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    
+    /* Aesthetics */
+    background: linear-gradient(180deg, var(--mapua-charcoal) 0%, #1a1d20 100%);
+    color: white;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+}
+
+/* --- Main Content Area (Right Side) --- */
+.main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+
+/* ==========================================================================
+   3. SIDEBAR COMPONENTS
+   ========================================================================== */
+
+/* Branding Section */
+.sidebar-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.brand-icon {
+    font-size: 2.5rem;
+    color: var(--mapua-red);
+    text-shadow: 0 0 20px rgba(158, 27, 50, 0.4);
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.brand-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: white;
+    text-transform: uppercase;
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--mapua-gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+/* Navigation Links */
+.sidebar .nav-item {
+    margin-bottom: 8px;
+}
+
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.sidebar .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.3s;
+}
+
+/* Nav Link Hover State */
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+    transform: translateX(5px);
+}
+.sidebar .nav-link:hover i {
+    color: var(--mapua-gold);
+}
+
+/* Nav Link Active State */
+.sidebar .nav-link.active {
+    background: linear-gradient(135deg, var(--mapua-red) 0%, #7d1528 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(158, 27, 50, 0.4);
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar .nav-link.active i {
+    color: white;
+}
+
+/* Footer / Logout Section */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 12px;
+    background-color: rgba(20, 20, 20, 0.5);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.btn-logout:hover {
+    background-color: rgba(158, 27, 50, 0.1);
+    color: var(--mapua-red);
+    border-color: var(--mapua-red);
+}
+
+
+/* ==========================================================================
+   4. UI COMPONENTS & WIDGETS
+   ========================================================================== */
+
+/* --- Cards --- */
+.card {
+    border: none;
+    border-top: 4px solid var(--mapua-red);
+    box-shadow: 0 10px 20px rgba(158, 27, 50, 0.05);
+    border-radius: 8px;
+    background: white;
+}
+
+/* --- Buttons --- */
+.btn-modern {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+    background-color: var(--mapua-red);
+    border-color: var(--mapua-red);
+}
+.btn-primary:hover {
+    background-color: #7d1528 !important;
+    border-color: #7d1528 !important;
+}
+
+.btn-outline-primary {
+    color: var(--mapua-red);
+    border-color: var(--mapua-red);
+}
+.btn-outline-primary:hover {
+    background-color: var(--mapua-red) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background-color: #157347;
+    border-color: #157347;
+}
+
+/* --- Utility Classes --- */
+.text-mapua { color: var(--mapua-red) !important; }
+.bg-mapua-primary { background-color: var(--mapua-red) !important; color: white !important; }
+.bg-mapua-gold { background-color: var(--mapua-gold) !important; color: white !important; }
+.bg-mapua-dark { background-color: var(--mapua-charcoal) !important; color: white !important; }
+
+/* --- Tab Animations --- */
+.tab-content { display: none; }
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.4s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Custom View Toggle (Segmented Control) --- */
+.view-toggle-container {
+    background-color: #f1f3f5;
+    padding: 5px;
+    border-radius: 50px;
+    display: inline-flex;
+    border: 1px solid #e9ecef;
+}
+
+.view-toggle-label {
+    padding: 8px 24px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-toggle-label:hover {
+    color: #9e1b32;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.btn-check:checked + .view-toggle-label {
+    background-color: #9e1b32;
+    color: white;
+    box-shadow: 0 4px 12px rgba(158, 27, 50, 0.3);
+}
+
+
+/* ==========================================================================
+   5. FORM CONTROLS
+   ========================================================================== */
+.input-group-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Standard Inputs */
+.input-modern {
+    border: 1px solid #e9ecef;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    min-height: 45px;
+}
+.input-modern:focus {
+    border-color: var(--mapua-red);
+    box-shadow: 0 0 0 4px rgba(158, 27, 50, 0.1);
+    outline: none;
+}
+
+/* --- Tom Select Customization (Dropdowns) --- */
+.ts-control {
+    border: 1px solid #e9ecef !important;
+    border-radius: 10px !important;
+    padding: 10px 15px !important;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03) !important;
+    background-color: #fff;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+}
+.ts-wrapper.focus .ts-control {
+    border-color: var(--mapua-red) !important;
+    box-shadow: 0 0 0 4px rgba(158, 27, 50, 0.1) !important;
+}
+
+/* Dropdown Menu & Options */
+.ts-dropdown {
+    border: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    padding: 8px !important;
+    margin-top: 5px !important;
+    z-index: 9999;
+}
+.ts-dropdown .option {
+    padding: 10px 15px !important;
+    border-radius: 6px !important;
+    margin-bottom: 2px;
+    font-size: 1rem !important;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+.ts-dropdown .option.active, 
+.ts-dropdown .option:hover {
+    background-color: var(--mapua-red) !important;
+    color: white !important;
+    transform: translateX(5px);
+}
+.ts-dropdown .option.selected {
+    background-color: #fff0f1 !important;
+    color: var(--mapua-red) !important;
+    font-weight: bold;
+}
+.ts-dropdown .option[data-value=""] {
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--mapua-gold) !important;
+}
+.ts-wrapper .arrow-down {
+    border-top-color: var(--mapua-red) !important;
+}
+
+
+/* ==========================================================================
+   6. LOADING OVERLAY
+   ========================================================================== */
+.page-loader {
+    position: fixed;
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background-color: #ffffff;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.page-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.mapua-spinner {
+    width: 60px; height: 60px;
+    border: 5px solid rgba(0, 0, 0, 0.05);
+    border-top-color: var(--mapua-red);
+    border-bottom-color: var(--mapua-gold);
+    border-radius: 50%;
+    animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    margin-bottom: 20px;
+}
+
+.loader-text {
+    font-weight: 700;
+    color: var(--mapua-charcoal);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 0.8rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes pulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+
+/* ==========================================================================
+   7. DATATABLES & PAGINATION OVERRIDES
+   ========================================================================== */
+.dataTables_wrapper .row:first-child {
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+/* Show Entries Dropdown */
+.dataTables_length label {
+    font-weight: 500;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+}
+.dataTables_length select {
+    margin: 0 12px !important;
+    min-width: 90px !important;
+    padding: 8px 40px 8px 15px !important;
+}
+
+/* Search Input */
+.dataTables_filter { text-align: right; }
+.dataTables_filter input {
+    width: 350px !important;
+    max-width: 100%;
+    margin-left: 10px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e9ecef;
+    padding: 8px 12px;
+}
+
+/* Table Header */
+table.dataTable thead th {
+    background-color: var(--mapua-charcoal) !important;
+    color: white !important;
+    border-bottom: 3px solid var(--mapua-red) !important;
+    padding: 15px !important;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+}
+
+/* Row Styling */
+table.dataTable tbody tr:hover {
+    background-color: #fff0f1 !important;
+    transform: scale(1.002);
+    transition: all 0.1s ease-in-out;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+    position: relative;
+}
+
+/* Sort Icons */
+table.dataTable thead .sorting:before, 
+table.dataTable thead .sorting:after {
+    color: var(--mapua-gold) !important;
+    opacity: 0.5 !important;
+}
+table.dataTable thead .sorting_asc:before, 
+table.dataTable thead .sorting_desc:after {
+    color: var(--mapua-gold) !important;
+    opacity: 1 !important;
+}
+
+/* Pagination Buttons */
+.page-link {
+    color: var(--mapua-charcoal) !important;
+    border: none !important;
+    margin: 0 3px;
+    border-radius: 8px !important;
+    font-weight: 600;
+    padding: 8px 14px;
+    transition: all 0.2s;
+}
+.page-link:hover {
+    background-color: #fff0f1 !important;
+    color: var(--mapua-red) !important;
+    transform: translateY(-2px);
+}
+.page-link:focus, 
+.page-link:active {
+    box-shadow: none !important;
+    outline: none !important;
+    background-color: #f8f9fa;
+}
+
+/* Active Page */
+.page-item.active .page-link {
+    background-color: var(--mapua-red) !important;
+    border-color: var(--mapua-red) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(158, 27, 50, 0.3);
+}
+
+
+/* ========================================================================
+   8. PRINT MEDIA QUERY (Optimized for Reports)
+   ======================================================================== */
+@media print {
+    /* ... (Keep your existing hide rules here) ... */
+    .sidebar, .btn, form#filterForm, .nav-tabs, .view-toggle-container, 
+    .card-header .btn, .modal, .no-print, .dataTables_length, 
+    .dataTables_filter, .dataTables_info, .dataTables_paginate {
+        display: none !important;
+    }
+
+    /* ... (Keep layout reset rules) ... */
+    .main-content, .container-fluid, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background-color: white !important;
+    }
+
+    /* --- NEW ADDITION: REMOVE SORTING ARROWS --- */
+    table.dataTable thead .sorting:before,
+    table.dataTable thead .sorting:after,
+    table.dataTable thead .sorting_asc:before,
+    table.dataTable thead .sorting_asc:after,
+    table.dataTable thead .sorting_desc:before,
+    table.dataTable thead .sorting_desc:after {
+        display: none !important;
+        content: none !important;
+    }
+
+    /* Ensure Table looks clean */
+    .card { border: none !important; box-shadow: none !important; }
+    #tab-detailed { display: block !important; }
+    
+    table {
+        width: 100% !important;
+        border: 1px solid #dee2e6;
+        font-size: 11px;
+    }
+
+    /* Print Header */
+    #tab-detailed::before {
+        content: "Detailed Attendance Report - Mapúa University";
+        display: block;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #9e1b32;
+        text-transform: uppercase;
+        border-bottom: 2px solid #9e1b32;
+        padding-bottom: 10px;
+    }
+}
+
+/* ========================================================================
+   9. TOM SELECT FOR DATATABLES (Show Entries)
+   ======================================================================== */
+
+/* Force the wrapper to be inline and small */
+.dataTables_length .ts-wrapper {
+    display: inline-block !important;
+    width: 85px !important;       /* Fixed width for numbers */
+    vertical-align: middle !important;
+    margin: 0 8px !important;     /* Spacing around the text */
+}
+
+/* Make the control smaller than the main filters */
+.dataTables_length .ts-control {
+    min-height: 38px !important;  
+    height: 38px !important;
+    padding: 0 10px !important;
+    border-radius: 8px !important;
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+}
+
+/* Hide the cursor/text input line since we just want a dropdown */
+.dataTables_length .ts-control input {
+    display: none !important;
+}
+
+/* Adjust the dropdown arrow position */
+.dataTables_length .ts-wrapper.single .ts-control:after {
+    right: 10px !important;
+}
+
+/* Ensure the dropdown menu floats correctly */
+.dataTables_length .ts-dropdown {
+    width: 100% !important;
+    min-width: 85px !important;
+}

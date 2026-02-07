@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - The Red Ledger</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-content">
+            <div class="mapua-spinner"></div>
+            <div class="loader-text">Loading Analytics...</div>
+        </div>
+    </div>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="bi bi-building-fill"></i></div>
+            <div class="brand-title">Cardinal Admin</div>
+            <div class="brand-subtitle">Mapúa University</div>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" onclick="switchTab('summary')" id="nav-summary">
+                    <i class="bi bi-grid-1x2-fill"></i><span>Summary</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchTab('detailed')" id="nav-detailed">
+                    <i class="bi bi-table"></i><span>Detailed Logs</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+             <a href="/logout" class="btn btn-logout"><i class="bi bi-box-arrow-left me-2"></i> Sign Out</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4 main-content">
+        
+        <div class="card p-3 mb-4 shadow-sm border-0">
+            <form action="/dashboard" method="GET" id="filterForm">
+                <input type="hidden" name="filter_day" id="hidden_filter_day" value="{{ filter_day }}">
+                <input type="hidden" name="filter_hour" id="hidden_filter_hour" value="{{ filter_hour }}">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-mapua fw-bold m-0" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                        <i class="bi bi-sliders2 me-2"></i>REPORT FILTERS
+                    </h5>
+                    
+                    <div class="view-toggle-container" style="background-color: #f8f9fa; padding: 4px; border-radius: 50px; border: 1px solid #dee2e6;">
+                        <input type="radio" class="btn-check" name="view_mode" id="modeMonthly" value="monthly" 
+                               {% if view_mode == 'monthly' %}checked{% endif %} onchange="toggleMode()">
+                        <label class="view-toggle-label mb-0" for="modeMonthly" style="padding: 6px 18px; border-radius: 50px; cursor: pointer; font-weight: 700; font-size: 0.85rem; color: #6c757d; transition: all 0.2s;">
+                            Monthly
+                        </label>
+
+                        <input type="radio" class="btn-check" name="view_mode" id="modeQuarterly" value="quarterly" 
+                               {% if view_mode == 'quarterly' %}checked{% endif %} onchange="toggleMode()">
+                        <label class="view-toggle-label mb-0" for="modeQuarterly" style="padding: 6px 18px; border-radius: 50px; cursor: pointer; font-weight: 700; font-size: 0.85rem; color: #6c757d; transition: all 0.2s;">
+                            Quarterly
+                        </label>
+                    </div>
+                    
+                    <style>
+                        .btn-check:checked + .view-toggle-label {
+                            background-color: #9e1b32;
+                            color: white !important;
+                            box-shadow: 0 2px 6px rgba(158, 27, 50, 0.3);
+                        }
+                    </style>
+                </div>
+
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-9">
+                        <div id="monthlyControls" class="{% if view_mode != 'monthly' %}d-none{% endif %}">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="text-uppercase fw-bold text-muted input-group-label" style="font-size: 0.7rem;">Year</label>
+                                    <select name="year" class="form-select input-modern" onchange="this.form.submit()">
+                                        <option value="2025" {% if selected_year == '2025' %}selected{% endif %}>2025</option>
+                                        <option value="2026" {% if selected_year == '2026' %}selected{% endif %}>2026</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-9">
+                                    <label class="text-uppercase fw-bold text-muted input-group-label" style="font-size: 0.7rem;">File</label>
+                                    <select name="month_file" class="form-select input-modern" onchange="this.form.submit()">
+                                        {% for file in files %}
+                                            <option value="{{ file }}" {% if file == current_file %}selected{% endif %}>{{ file }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-end">
+                                <a href="#" class="text-decoration-none small fw-bold {{ 'text-mapua' if filter_day or filter_hour else 'text-muted' }}" 
+                                   style="font-size: 0.8rem; letter-spacing: 0.5px;"
+                                   data-bs-toggle="modal" data-bs-target="#advancedFiltersModal">
+                                    {% if filter_day or filter_hour %}
+                                        <i class="bi bi-funnel-fill me-1"></i> Filters Active (Edit)
+                                    {% else %}
+                                        <i class="bi bi-sliders me-1"></i> Advanced Filters
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div id="quarterlyControls" class="{% if view_mode != 'quarterly' %}d-none{% endif %}">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="text-uppercase fw-bold text-muted input-group-label" style="font-size: 0.7rem;">Mapúa Quarter</label>
+                                    <select name="term_key" class="form-select input-modern" onchange="this.form.submit()">
+                                        <option value="">Custom...</option>
+                                        {% for key, info in terms.items() %}
+                                            <option value="{{ key }}" {% if selected_term == key %}selected{% endif %}>{{ info.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-uppercase fw-bold text-muted input-group-label" style="font-size: 0.7rem;">Start Date</label>
+                                    <input type="date" name="start_date" value="{{ start_date }}" class="form-control input-modern">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-uppercase fw-bold text-muted input-group-label" style="font-size: 0.7rem;">End Date</label>
+                                    <input type="date" name="end_date" value="{{ end_date }}" class="form-control input-modern">
+                                </div>
+                            </div>
+                             <div class="mt-2 text-end">
+                                <a href="#" class="text-decoration-none small fw-bold {{ 'text-mapua' if filter_day or filter_hour else 'text-muted' }}" 
+                                   style="font-size: 0.8rem; letter-spacing: 0.5px;"
+                                   data-bs-toggle="modal" data-bs-target="#advancedFiltersModal">
+                                    {% if filter_day or filter_hour %}
+                                        <i class="bi bi-funnel-fill me-1"></i> Filters Active (Edit)
+                                    {% else %}
+                                        <i class="bi bi-sliders me-1"></i> Advanced Filters
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="d-flex gap-2 pt-4"> 
+                            <button type="submit" class="btn btn-primary btn-modern flex-grow-1 fw-bold text-uppercase" style="font-size: 0.8rem;">
+                                Update
+                            </button>
+                            <a href="#" onclick="exportReport()" class="btn btn-success btn-modern flex-grow-1 fw-bold text-uppercase" style="font-size: 0.8rem;">
+                                <i class="bi bi-download me-1"></i> Export
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="tab-summary" class="tab-content active">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid var(--mapua-red);">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Total Visitors</p><h2 id="live-total" class="fw-bold text-mapua mb-0">{{ total_visitors }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-people-fill text-mapua fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted"><i class="bi bi-arrow-up-right text-success"></i> <span id="live-avg" class="fw-bold">{{ avg_daily }}</span> avg. per day</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid var(--mapua-gold);">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Top Program</p><h2 id="live-dept" class="fw-bold text-warning mb-0">{{ top_dept }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-trophy-fill text-warning fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Most active group</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid #212529;">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Peak Hour</p><h2 id="live-peak" class="fw-bold text-dark mb-0">{{ peak_hour }}</h2></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-clock-fill text-dark fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Busiest time of day</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 shadow-sm h-100 border-start-0 border-end-0 border-bottom-0" style="border-top: 4px solid #198754;">
+                        <div class="d-flex justify-content-between">
+                            <div><p class="text-muted small fw-bold text-uppercase mb-1">Busiest Day</p><h4 id="live-day" class="fw-bold text-success mb-0">{{ busiest_day }}</h4></div>
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="bi bi-calendar-check-fill text-success fs-4"></i></div>
+                        </div>
+                        <div class="mt-3 small text-muted">Highest traffic recorded</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-8">
+                    <div class="card p-4 shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h6 class="text-mapua fw-bold text-uppercase m-0"><i class="bi bi-bar-chart-line-fill me-2"></i>Traffic Volume</h6>
+                                <small class="text-muted">Hourly Analysis</small>
+                            </div>
+                        </div>
+                        <div style="height: 320px; width: 100%;"><canvas id="timeChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-4 shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h6 class="text-mapua fw-bold text-uppercase m-0"><i class="bi bi-pie-chart-fill me-2"></i>Distribution</h6>
+                                <small class="text-muted">By Department</small>
+                            </div>
+                        </div>
+                        <div style="height: 320px; width: 100%; position: relative;">
+                            <canvas id="deptChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100 p-4">
+                        <h6 class="text-mapua fw-bold text-uppercase mb-4">Visitor Composition</h6>
+                        <div style="height: 220px; width: 100%; position: relative;"><canvas id="compChart"></canvas></div>
+                        <div class="mt-4 text-center d-flex justify-content-center gap-3">
+                            <div class="text-center">
+                                <h4 class="fw-bold text-mapua mb-0" id="live-students">{{ student_count }}</h4>
+                                <small class="text-muted small text-uppercase fw-bold">Students</small>
+                            </div>
+                            <div class="vr"></div>
+                            <div class="text-center">
+                                <h4 class="fw-bold text-secondary mb-0" id="live-guests">{{ emp_count }}</h4>
+                                <small class="text-muted small text-uppercase fw-bold">Employees</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white py-3 border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="text-mapua fw-bold text-uppercase m-0">Recent Activity</h6>
+                                <span class="badge bg-light text-dark border">Latest Records</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="small text-uppercase text-muted ps-4">Time</th>
+                                        <th class="small text-uppercase text-muted">Name</th>
+                                        <th class="small text-uppercase text-muted">Type</th>
+                                        <th class="small text-uppercase text-muted">Program/Dept</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-recent-table">
+                                    {% for row in recent_logs %}
+                                    <tr>
+                                        <td class="fw-bold text-dark ps-4">{{ row['Time_In'] }}</td>
+                                        <td>{{ row['Last_Name'] }}, {{ row['First_Name'] }}</td>
+                                        <td>
+                                            {% if row['Type'] == 'Student' %}<span class="badge rounded-pill bg-danger" style="font-size: 0.7rem;">STUDENT</span>
+                                            {% else %}<span class="badge rounded-pill bg-secondary" style="font-size: 0.7rem;">EMPLOYEE</span>{% endif %}
+                                        </td>
+                                        <td class="small text-muted">{{ row['Program'] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-detailed" class="tab-content">
+            <div class="card p-4 shadow-sm border-0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-mapua fw-bold m-0"><i class="bi bi-list-columns-reverse me-2"></i>{{ report_label }}</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer-fill"></i> Print
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="logsTable" class="table table-hover align-middle small" style="width:100%">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Type</th><th>Name</th><th>ID Number</th><th>Program</th><th>Date</th><th>In</th><th>Out</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data_rows %}
+                            <tr>
+                                <td>{{ row['Type'] }}</td>
+                                <td class="fw-bold">{{ row['Last_Name'] }}, {{ row['First_Name'] }}</td>
+                                <td>{{ row['ID_Number'] }}</td>
+                                <td>{{ row['Program'] }}</td>
+                                <td>{{ row['Date_Logged'] }}</td>
+                                <td>{{ row['Time_In'] }}</td>
+                                <td>{{ row['Time_Out'] if row['Time_Out'] else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="advancedFiltersModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 p-4" style="background: linear-gradient(to right, #fff0f1, #fff);">
+                    <h6 class="modal-title fw-bold text-mapua text-uppercase" style="letter-spacing: 1px;">
+                        <i class="bi bi-sliders2 me-2"></i>Advanced Filtering
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <p class="text-muted small mb-4">Narrow down the report logic by selecting a specific day or time range.</p>
+                    <div class="mb-4">
+                        <label class="text-uppercase fw-bold text-muted small mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Specific Day</label>
+                        <select id="modal_day" class="form-select input-modern shadow-sm" style="border-radius: 8px; border-color: #eee;">
+                            <option value="">All Days</option>
+                            {% for i in range(1, 32) %}
+                                {% set day_str = "%02d" % i %}
+                                <option value="{{ day_str }}" {% if filter_day == day_str %}selected{% endif %}>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-uppercase fw-bold text-muted small mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Specific Hour</label>
+                        <select id="modal_hour" class="form-select input-modern shadow-sm" style="border-radius: 8px; border-color: #eee;">
+                            <option value="">All Hours</option>
+                            {% for i in range(7, 21) %}
+                                {% set hour = "%02d" % i %}
+                                <option value="{{ hour }}" {% if filter_hour == hour %}selected{% endif %}>{{ hour }}:00 - {{ hour }}:59</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold text-uppercase small" 
+                            onclick="resetAdvancedFilters()" style="font-size: 0.75rem; letter-spacing: 0.5px; transition: color 0.2s;">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </button>
+                    <button type="button" class="btn btn-danger fw-bold text-uppercase px-4 py-2" 
+                            onclick="applyAdvancedFilters()"
+                            style="background-color: #9e1b32; border: none; border-radius: 50px; font-size: 0.8rem; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(158, 27, 50, 0.3);">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 1. Initialize DataTables with Tom Select integration
+            $('#logsTable').DataTable({ 
+                order: [[4, 'desc'], [5, 'desc']],
+                initComplete: function() {
+                    // Find the 'Show Entries' select element generated by DataTables
+                    var lengthSelect = document.querySelector('.dataTables_length select');
+                    
+                    if (lengthSelect) {
+                        new TomSelect(lengthSelect, {
+                            create: false,
+                            controlInput: null, // Hide the search text input (cleaner for numbers)
+                            dropdownParent: 'body',
+                            render: {
+                                // Custom rendering to match your theme
+                                item: function(data, escape) { 
+                                    return '<div class="fw-bold text-dark">' + escape(data.text) + '</div>'; 
+                                },
+                                option: function(data, escape) { 
+                                    return '<div class="fw-bold">' + escape(data.text) + '</div>'; 
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // 2. Initialize Main Filter Dropdowns (Year, File, etc.)
+            document.querySelectorAll('select.input-modern').forEach((el) => {
+                new TomSelect(el, { 
+                    create: false, 
+                    dropdownParent: 'body', 
+                    render: { 
+                        item: function(d,e){return '<div>'+e(d.text)+'</div>'}, 
+                        option: function(d,e){return '<div>'+e(d.text)+'</div>'} 
+                    } 
+                });
+            });
+
+            // Hide Loader
+            setTimeout(function() { document.getElementById('pageLoader').classList.add('hidden'); }, 800);
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.getElementById('nav-' + tabName).classList.add('active');
+        }
+
+        function toggleMode() {
+            const isMonthly = document.getElementById('modeMonthly').checked;
+            const mControls = document.getElementById('monthlyControls');
+            const qControls = document.getElementById('quarterlyControls');
+            if (isMonthly) {
+                mControls.classList.remove('d-none');
+                qControls.classList.add('d-none');
+            } else {
+                mControls.classList.add('d-none');
+                qControls.classList.remove('d-none');
+            }
+        }
+
+        function exportReport() {
+            const form = document.getElementById('filterForm');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            window.location.href = `/download_report?${params.toString()}`;
+        }
+
+        function applyAdvancedFilters() {
+            document.getElementById('hidden_filter_day').value = document.getElementById('modal_day').value;
+            document.getElementById('hidden_filter_hour').value = document.getElementById('modal_hour').value;
+            document.getElementById('filterForm').submit();
+        }
+
+        function resetAdvancedFilters() {
+            document.getElementById('hidden_filter_day').value = "";
+            document.getElementById('hidden_filter_hour').value = "";
+            document.getElementById('filterForm').submit();
+        }
+
+        // --- MODERN VISUALIZATION (CHART.JS) ---
+        Chart.defaults.font.family = "'Segoe UI', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = '#6c757d';
+        
+        // --- CUSTOM TOOLTIP CONFIGURATION ---
+        const cardinalTooltip = {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#9e1b32', // Mapúa Red Title
+            titleFont: { size: 13, weight: 'bold' },
+            bodyColor: '#212529',  // Dark Text
+            bodyFont: { size: 12 },
+            borderColor: '#9e1b32',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+                // 1. Fix Time Format (e.g., change "14" to "14:00")
+                title: function(tooltipItems) {
+                    let title = tooltipItems[0].label;
+                    // If the title is exactly 2 digits (like '09' or '14'), add ':00'
+                    if (/^\d{2}$/.test(title)) {
+                        return title + ":00";
+                    }
+                    return title;
+                },
+                // 2. Fix "Undefined" Records
+                label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) { label += ': '; }
+                    
+                    // LOGIC: Bar charts use 'parsed.y', Doughnut uses 'raw'
+                    let value = context.parsed.y !== undefined ? context.parsed.y : context.raw;
+                    
+                    return label + value + ' records';
+                }
+            }
+        };
+
+        const palette = {
+            red: '#9e1b32', gold: '#c5a065', dark: '#212529', 
+            charcoal: '#343a40', green: '#198754', blue: '#0d6efd', slate: '#6c757d'
+        };
+
+        const deptColors = [
+            palette.red, palette.gold, palette.charcoal, 
+            palette.green, palette.blue, '#fd7e14', '#6610f2', '#20c997'
+        ];
+
+        // 2. Department Share (Doughnut)
+        const ctxDept = document.getElementById('deptChart').getContext('2d');
+        new Chart(ctxDept, {
+            type: 'doughnut',
+            data: {
+                labels: {{ dept_labels_json | safe }},
+                datasets: [{ 
+                    data: {{ dept_counts_json | safe }}, 
+                    backgroundColor: deptColors,
+                    borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '75%',
+                plugins: { 
+                    legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 15, font: { weight: '600' } } },
+                    tooltip: cardinalTooltip // Apply Custom Tooltip
+                },
+                layout: { padding: 10 }
+            }
+        });
+
+        // 3. Traffic Volume (Modern Bar with Gradient)
+        const ctxTime = document.getElementById('timeChart').getContext('2d');
+        const gradientTime = ctxTime.createLinearGradient(0, 0, 0, 400);
+        gradientTime.addColorStop(0, palette.red); 
+        gradientTime.addColorStop(1, '#631120');
+
+        new Chart(ctxTime, {
+            type: 'bar',
+            data: {
+                labels: {{ time_labels_json | safe }},
+                datasets: [{ 
+                    data: {{ time_counts_json | safe }}, 
+                    backgroundColor: gradientTime,
+                    borderRadius: { topLeft: 8, topRight: 8 },
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: cardinalTooltip // Apply Custom Tooltip
+                },
+                scales: { 
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f0f0f0' }, ticks: { padding: 10 } }, 
+                    x: { grid: { display: false }, ticks: { font: { weight: '600' } } } 
+                }
+            }
+        });
+
+        // 4. Composition (Clean Doughnut)
+        const ctxComp = document.getElementById('compChart').getContext('2d');
+        new Chart(ctxComp, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Employees'],
+                datasets: [{
+                    data: [{{ student_count }}, {{ emp_count }}],
+                    backgroundColor: [palette.red, palette.slate],
+                    borderWidth: 0, hoverOffset: 4
+                }]
+            }, 
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '80%',
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: cardinalTooltip // Apply Custom Tooltip
+                } 
+            }
+        });
+    </script>
+</body>
+</html>
