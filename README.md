@@ -1,89 +1,77 @@
-# Campus Visitor Logging System
+# The Red Ledger 📕
+### RFID Library Attendance System - Mapúa University
 
-A lightweight, Flask-based web application designed to digitize visitor tracking for campus or facility access. This system replaces physical logbooks with a digital interface, offering real-time data visualization, automated Excel logging, and administrative reporting capabilities.
+**The Red Ledger** is a Flask-based web application designed to track, manage, and visualize library attendance for Mapúa University. It interfaces with RFID scanners to log student and employee entry/exit times and provides a powerful admin dashboard for analytics.
 
-## 📋 Features
+---
 
--   **User Portal:** simple, fast entry form for Students and Guests.
-    
-    -   _Students:_ Validates 10-digit Student IDs automatically.
-        
-    -   _Guests:_ Captures agency/department details.
-        
--   **Automated Database:** entries are automatically saved to monthly Excel files (e.g., `log_202601.xlsx`) to ensure data persistence and easy archiving.
-    
--   **Admin Dashboard:**
-    
-    -   Secure login authentication.
-        
-    -   Real-time statistics (Total Visitors, Peak Hours, Busiest Days).
-        
-    -   Dynamic charts for Department/Program distribution.
-        
-    -   Historical data filtering by Year, Month, Day, and Hour.
-        
--   **Reporting:** one-click generation of formatted Excel reports, including summary statistics and pie charts.
-    
+## 🚀 Key Features
 
-## 🛠️ Technology Stack
+### 1. **Smart RFID Logging**
+- **Tap IN / Tap OUT:** Automatically detects if a user is entering or leaving based on their last status.
+- **"Forgotten Logout" Fix:** If a student forgets to tap out and returns the next day, the system automatically:
+    - Closes the previous day's session at **21:00 (9:00 PM)**.
+    - Marks the record as "Auto-Closed".
+    - Starts a fresh "IN" session for the current visit.
 
--   **Backend:** Python (Flask)
-    
--   **Data Manipulation:** Pandas
-    
--   **Storage:** Local Excel Files (`.xlsx`)
-    
--   **Reporting Engine:** XlsxWriter, OpenPyXL
-    
--   **Configuration:** Python-Dotenv
-    
+### 2. **Admin Dashboard**
+- **Live Analytics:** View real-time Total Visitors, Peak Hours, and Busiest Days.
+- **Interactive Charts:**
+    - **Traffic Volume:** Hourly breakdown with gradient bar charts.
+    - **Department Share:** Doughnut chart showing which programs use the library most.
+    - **Visitor Composition:** Student vs. Employee ratio.
+- **Dual View Modes:**
+    - **Monthly View:** Deep dive into specific months with granular **Day** and **Hour** filters.
+    - **Quarterly View:** aggregated data based on Mapúa's academic terms (Quarter 1 - Quarter 4).
 
-## ⚙️ Installation & Setup
+### 3. **Reporting & Tools**
+- **Excel Export:** Download comprehensive reports for any selected date range or month.
+- **Print Mode:** A clean, ink-friendly layout for printing detailed logs directly from the browser.
+- **Advanced Filtering:** Drill down data by specific days or hours using the advanced filter modal.
 
-### 1. Prerequisites
+---
 
-Ensure you have **Python 3.8+** installed on your system.
+## 🛠️ Installation & Setup
 
-### 2. Clone or Download
+### **1. Prerequisites**
+Ensure you have Python installed. Then, install the required dependencies:
 
-Extract the project files to your local directory.
-
-### 3. Install Dependencies
-
-Open your terminal (Command Prompt) in the project folder and run:
-
-Bash
-
-```
+```bash
 pip install -r requirements.txt
 
 ```
 
-### 4. Configuration (Environment Variables)
+_(If `requirements.txt` is missing, you need: `flask`, `pandas`, `openpyxl`, `xlsxwriter`, `faker`)_
 
-For security, this project uses environment variables to store credentials. You must create a file named `.env` in the root directory.
+### **2. Generate Dummy Data (First Run)**
 
-1.  Create a file named `.env`
-    
-2.  Add the following configurations:
-    
+Before running the app, you need a database of users and some historical logs to visualize.
 
-Ini, TOML
+**Step A: Create the Master List** Generates `Master_List.xlsx` with 500 fake students and employees.
+
+Bash
 
 ```
-FLASK_SECRET_KEY=YourSecureRandomStringHere
-ADMIN_USERNAME=Admin123
-ADMIN_PASSWORD=MapuaUniv123
+python create_master.py
 
 ```
 
-> **Note:** The `.env` file is excluded from version control via `.gitignore` to protect sensitive information.
+**Step B: Generate Historical Logs** Simulates library traffic from Term 1 (Aug 2025) to present, including realistic "forgotten logout" scenarios.
 
-## 🚀 Usage
+Bash
 
-### Starting the Application
+```
+python generate_history.py
 
-Run the following command in your terminal:
+```
+
+----------
+
+## 🖥️ How to Run
+
+### **1. Start the Server**
+
+Run the Flask application:
 
 Bash
 
@@ -92,58 +80,73 @@ python app.py
 
 ```
 
-You should see output indicating the server is running (usually `Running on http://127.0.0.1:5000`).
+_Access the dashboard at:_ `http://127.0.0.1:5000/`
 
-### Accessing the System
+**Login Credentials:**
 
-Open your web browser and navigate to:
-
-1.  **Public Logbook:** `http://127.0.0.1:5000/`
+-   **Username:** `Admin123`
     
-    -   Used by students and guests to sign in.
-        
-2.  **Admin Dashboard:** `http://127.0.0.1:5000/admin_login`
+-   **Password:** `MapuaUniv123`
     
-    -   Use the credentials defined in your `.env` file to log in.
-        
+
+### **2. Simulate RFID Taps (Testing)**
+
+Since you may not have the physical scanner connected, use this script to simulate a card tap:
+
+Bash
+
+```
+python test_tap.py
+
+```
+
+-   **First Run:** Logs the user **IN**.
+    
+-   **Second Run:** Logs the user **OUT**.
+    
+-   **Next Day:** Auto-closes the previous session and logs **IN**.
+    
+
+----------
 
 ## 📂 Project Structure
 
-    TheRedLedger/
-    │
-    ├── Record/                 # Auto-generated Excel database storage
-    │   ├── 2025/               # Yearly archives
-    │   └── 2026/
-    │
-    ├── routes/                 # Modular Application Logic (Blueprints)
-    │   ├── __init__.py         # Package initialization
-    │   ├── auth.py             # Admin authentication routes
-    │   ├── dashboard.py        # Analytics and reporting routes
-    │   └── main.py             # Public kiosk and form submission routes
-    │
-    ├── static/                 # Static Assets
-    │   └── css/
-    │       ├── admin.css       # Admin login styling
-    │       ├── dashboard.css   # Dashboard layout and theming
-    │       └── login.css       # Main kiosk interface styling
-    │
-    ├── templates/              # HTML Interface Files
-    │   ├── admin_login.html    # Admin login page
-    │   ├── dashboard.html      # Analytics dashboard
-    │   └── index.html          # Main student/guest kiosk
-    │
-    ├── .env                    # Configuration secrets (Excluded from Git)
-    ├── .gitignore              # Git exclusion rules
-    ├── app.py                  # Main application entry point
-    ├── dummy_data.py           # Utility for generating test records
-    ├── README.md               # Project documentation
-    ├── requirements.txt        # Python dependency list
-    └── utils.py                # Shared helper functions & Excel logic
+```
+RedLedger/
+│
+├── app.py                 # Main Flask Application
+├── create_master.py       # Script: Generates Master_List.xlsx
+├── generate_history.py    # Script: Generates past attendance logs
+├── test_tap.py            # Script: Simulates RFID hardware taps
+├── utils.py               # Helper functions (Excel handling)
+├── requirements.txt       # Python dependencies
+│
+├── Record/                # Database Folder (Auto-generated)
+│   ├── 2025/              # Logs organized by Year
+│   └── 2026/
+│
+├── routes/                # Blueprint Routes
+│   ├── api.py             # RFID Tap Logic & JSON API
+│   ├── auth.py            # Login/Logout Logic
+│   └── dashboard.py       # Dashboard Analytics & Reporting
+│
+├── static/
+│   └── css/
+│       ├── admin.css      # Login Page Styles
+│       └── dashboard.css  # Main Dashboard Theme
+│
+└── templates/
+    ├── admin_login.html   # Login Page
+    └── dashboard.html     # Main Admin Interface
 
-## 🛡️ Security Note
+```
 
-This application is designed for **local deployment**. If deploying to a public server, ensure `DEBUG=True` is turned off in `app.py` and that the `.env` file is not accessible publicly.
+----------
 
-## 📄 License
+## 🎨 Credits
 
-This project is created for educational purposes within Mapúa University.
+**Developed for:** Mapúa University
+
+**Theme:** "Cardinal Admin" (Custom CSS)
+
+**Tech Stack:** Python, Flask, Pandas, Chart.js, Tom Select, DataTables.
